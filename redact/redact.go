@@ -60,6 +60,8 @@ var (
 	bearerCredentialRegexp      = regexp.MustCompile(`(?i)\bBearer\s+([A-Za-z0-9._~+/-]{16,})`)
 	jwtValuePattern             = regexp.MustCompile(`\b[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b`)
 	sensitiveAssignmentRegexp   = regexp.MustCompile(`(?i)\b([A-Za-z0-9_.-]*(?:api[_-]?key|apikey|app[_-]?id|appid|token|secret|password|authorization|credential|private[_-]?key)[A-Za-z0-9_.-]*)(\s*[:=]\s*)(["'])([^"'\r\n]+)(["'])`)
+	unquotedAssignmentRegexp    = regexp.MustCompile(`(?i)\b([A-Za-z0-9_.-]*(?:api[_-]?key|apikey|app[_-]?id|appid|token|secret|password|authorization|credential|private[_-]?key)[A-Za-z0-9_.-]*)(\s*[:=]\s*)([^\s"',;]+)`)
+	authSchemeRegexp            = regexp.MustCompile(`(?i)^(?:bearer|basic|digest|negotiate)$`)
 	tokenSourceAssignmentSuffix = regexp.MustCompile(`(?i)(?:^|[_\-.])from$`)
 )
 
@@ -220,6 +222,19 @@ func redactString(value string, cfg config) result {
 		}
 		count++
 		return parts[1] + parts[2] + parts[3] + cfg.marker + parts[5]
+	})
+	out = unquotedAssignmentRegexp.ReplaceAllStringFunc(out, func(match string) string {
+		parts := unquotedAssignmentRegexp.FindStringSubmatch(match)
+		if len(parts) != 4 || isSensitiveSourceAssignment(parts[1]) {
+			return match
+		}
+		// Leave already-redacted markers and auth-scheme words (the token after
+		// "Bearer"/"Basic" is handled by bearerCredentialRegexp) untouched.
+		if parts[3] == cfg.marker || authSchemeRegexp.MatchString(parts[3]) {
+			return match
+		}
+		count++
+		return parts[1] + parts[2] + cfg.marker
 	})
 	return result{value: out, changed: out != value, count: count}
 }

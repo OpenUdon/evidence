@@ -41,6 +41,33 @@ func TestStringRedactsSensitiveAssignments(t *testing.T) {
 	}
 }
 
+func TestStringRedactsUnquotedAssignments(t *testing.T) {
+	got := String("password=hunter2 token: s3cr3tvalue token_from=ENVIRONMENT:API_TOKEN")
+	if strings.Contains(got, "hunter2") || strings.Contains(got, "s3cr3tvalue") {
+		t.Fatalf("unquoted secret leaked: %q", got)
+	}
+	if !strings.Contains(got, "password="+Value) {
+		t.Fatalf("unquoted password was not redacted: %q", got)
+	}
+	if !strings.Contains(got, "token: "+Value) {
+		t.Fatalf("unquoted token was not redacted: %q", got)
+	}
+	if !strings.Contains(got, "token_from=ENVIRONMENT:API_TOKEN") {
+		t.Fatalf("source assignment should be preserved: %q", got)
+	}
+}
+
+func TestStringRedactsUnquotedAuthorizationHeader(t *testing.T) {
+	got := String("Authorization: Bearer abcdefghijklmnopqrstuvwxyz")
+	if strings.Contains(got, "abcdefghijklmnopqrstuvwxyz") {
+		t.Fatalf("bearer token leaked: %q", got)
+	}
+	// The "Bearer" scheme word must survive; only the token is redacted.
+	if !strings.Contains(got, "Bearer "+Value) {
+		t.Fatalf("expected Bearer scheme preserved: %q", got)
+	}
+}
+
 func TestAnyRedactsNestedDocuments(t *testing.T) {
 	doc := map[string]any{
 		"name": "demo",

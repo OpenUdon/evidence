@@ -62,6 +62,70 @@ func TestRequirementsSatisfiedExpiry(t *testing.T) {
 	}
 }
 
+func TestTimestamplessApproverDoesNotCount(t *testing.T) {
+	now := time.Date(2026, 5, 30, 12, 0, 0, 0, time.UTC)
+	requirements := []Requirement{{ID: "change", MinApprovals: 1}}
+	// Identity present but approved_at missing => invalid, must not satisfy.
+	approvers := []Approver{{Identity: "alice"}}
+	if err := RequirementsSatisfied(requirements, approvers, now); err == nil {
+		t.Fatal("approver missing approved_at unexpectedly satisfied requirement")
+	}
+	approvers = append(approvers, Approver{Identity: "bob", ApprovedAt: now})
+	if err := RequirementsSatisfied(requirements, approvers, now); err != nil {
+		t.Fatalf("valid approver did not satisfy requirement: %v", err)
+	}
+}
+
+func TestValidateRecordDefaultsNowForExpiry(t *testing.T) {
+	// No Now supplied: ValidateRecord must default the clock so an
+	// already-expired requirement is reported rather than silently passing.
+	records := ValidateRecord(Record{
+		Version: RecordVersion,
+		Subject: Subject{ID: "plan"},
+		Requirements: []Requirement{{
+			ID:           "short-lived",
+			MinApprovals: 1,
+			ExpiresAt:    time.Now().Add(-time.Hour),
+		}},
+		Approvers: []Approver{{Identity: "alice", ApprovedAt: time.Now().Add(-2 * time.Hour)}},
+	}, ValidationOptions{})
+	var found bool
+	for _, record := range records {
+		if record.Code == "approval.requirement_expired" {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("expected approval.requirement_expired diagnostic, got %#v", records)
+	}
+}
+
+func TestDigestRecordStableForCollidingRequirementKeys(t *testing.T) {
+	// {ID:"a",SubjectID:"bc"} and {ID:"ab",SubjectID:"c"} concatenate to the
+	// same "abc" key; the sort must still order them deterministically so the
+	// record digest is independent of input order.
+	mk := func(reqs []Requirement) Record {
+		return Record{Subject: Subject{ID: "plan"}, Requirements: reqs}
+	}
+	a, err := DigestRecord(mk([]Requirement{
+		{ID: "a", SubjectID: "bc"},
+		{ID: "ab", SubjectID: "c"},
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	b, err := DigestRecord(mk([]Requirement{
+		{ID: "ab", SubjectID: "c"},
+		{ID: "a", SubjectID: "bc"},
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if a != b {
+		t.Fatalf("digests differ for reordered colliding keys:\n%s\n%s", a.String(), b.String())
+	}
+}
+
 func TestDigestRecordIsDeterministic(t *testing.T) {
 	when := time.Date(2026, 5, 30, 12, 0, 0, 0, time.UTC)
 	a := Record{

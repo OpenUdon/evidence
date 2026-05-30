@@ -125,6 +125,11 @@ func EvaluateRequirements(requirements []Requirement, approvers []Approver, now 
 			if approver.Identity == "" {
 				continue
 			}
+			// An approver missing its approved_at timestamp is invalid (see
+			// NormalizeApprover) and must not count toward satisfaction.
+			if approver.ApprovedAt.IsZero() {
+				continue
+			}
 			if seen[approver.Identity] {
 				continue
 			}
@@ -160,6 +165,12 @@ func DigestRecord(record Record) (digest.Record, error) {
 // evidence. Diagnostics are sorted deterministically.
 func ValidateRecord(record Record, opts ValidationOptions) []diagnostic.Record {
 	record = NormalizeRecord(record)
+	// Default the evaluation clock so expiry is enforced even when the caller
+	// omits Now; otherwise expired requirements would validate as satisfied.
+	now := opts.Now
+	if now.IsZero() {
+		now = time.Now().UTC()
+	}
 	var records []diagnostic.Record
 	if record.Version != RecordVersion {
 		records = append(records, diag("approval.version_invalid", "approval record version is unsupported", "version"))
@@ -183,7 +194,7 @@ func ValidateRecord(record Record, opts ValidationOptions) []diagnostic.Record {
 			records = append(records, diag("approval.requirement_min_invalid", "approval requirement min_approvals must not be negative", fmt.Sprintf("requirements[%d].min_approvals", i)))
 		}
 	}
-	for _, decision := range EvaluateRequirements(record.Requirements, record.Approvers, opts.Now) {
+	for _, decision := range EvaluateRequirements(record.Requirements, record.Approvers, now) {
 		if decision.Satisfied {
 			continue
 		}
@@ -277,7 +288,16 @@ func NormalizeRequirements(requirements []Requirement) []Requirement {
 		out = append(out, req)
 	}
 	slices.SortStableFunc(out, func(a, b Requirement) int {
-		return strings.Compare(a.ID+a.SubjectID+a.Address+a.Action, b.ID+b.SubjectID+b.Address+b.Action)
+		if diff := strings.Compare(a.ID, b.ID); diff != 0 {
+			return diff
+		}
+		if diff := strings.Compare(a.SubjectID, b.SubjectID); diff != 0 {
+			return diff
+		}
+		if diff := strings.Compare(a.Address, b.Address); diff != 0 {
+			return diff
+		}
+		return strings.Compare(a.Action, b.Action)
 	})
 	return out
 }

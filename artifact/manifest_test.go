@@ -9,6 +9,36 @@ import (
 	"testing"
 )
 
+func TestValidationLabelsCustomizeWording(t *testing.T) {
+	opts := Options{RootLabel: "package root", PathLabel: "package path", InputLabel: "required handoff input"}
+
+	// Root label.
+	link := filepath.Join(t.TempDir(), "link")
+	if err := os.Symlink(t.TempDir(), link); err != nil {
+		t.Skipf("symlink unsupported: %v", err)
+	}
+	if err := ValidateRoot(link, opts); err == nil || !strings.Contains(err.Error(), "package root must not be a symlink") {
+		t.Fatalf("root label not applied: %v", err)
+	}
+
+	// Path label (escaping path is unsafe).
+	if err := ValidateRegularFiles(t.TempDir(), []string{"."}, opts); err == nil ||
+		!strings.Contains(err.Error(), "package path") || !strings.Contains(err.Error(), "stay inside package root") {
+		t.Fatalf("path/root label not applied: %v", err)
+	}
+
+	// Input label (missing file).
+	if err := ValidateRegularFiles(t.TempDir(), []string{"missing.txt"}, opts); err == nil ||
+		!strings.Contains(err.Error(), "required handoff input") {
+		t.Fatalf("input label not applied: %v", err)
+	}
+
+	// Default wording is preserved when no options are supplied.
+	if err := ValidateRoot(link); err == nil || !strings.Contains(err.Error(), "artifact root must not be a symlink") {
+		t.Fatalf("default wording changed: %v", err)
+	}
+}
+
 func TestCleanRelativePathRejectsUnsafePaths(t *testing.T) {
 	for _, input := range []string{"", "../secret.txt", "a/../secret.txt", "/tmp/file", `a\b.txt`, "C:/tmp/file"} {
 		if _, err := CleanRelativePath(input); err == nil {
