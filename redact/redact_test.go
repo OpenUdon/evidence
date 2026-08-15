@@ -122,3 +122,24 @@ func TestCustomOptions(t *testing.T) {
 		t.Fatalf("custom sensitive key did not redact: %#v", doc)
 	}
 }
+
+func TestExactSensitiveKeysDoNotUseSubstringMatching(t *testing.T) {
+	opts := Options{ExactSensitiveKeys: []string{"session", "raw_capture"}}
+	for _, key := range []string{"session", " SESSION ", "raw-capture", "raw.capture"} {
+		if !SensitiveKey(key, opts) {
+			t.Fatalf("expected exact sensitive key %q", key)
+		}
+	}
+	for _, key := range []string{"sessions_count", "session_duration", "raw_capture_count"} {
+		if SensitiveKey(key, opts) {
+			t.Fatalf("exact sensitive key matched substring %q", key)
+		}
+	}
+	doc := Any(map[string]string{
+		"raw-capture":       "opaque browser state",
+		"raw_capture_count": "4",
+	}, opts).(map[string]string)
+	if doc["raw-capture"] != Value || doc["raw_capture_count"] != "4" {
+		t.Fatalf("exact-key document redaction = %#v", doc)
+	}
+}

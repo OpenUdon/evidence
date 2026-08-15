@@ -17,13 +17,19 @@ const (
 type Options struct {
 	Marker             string
 	ExtraSensitiveKeys []string
+	// ExactSensitiveKeys adds case-insensitive whole-key matches. Common key
+	// separators are normalized, so raw-capture and raw_capture are equivalent.
+	// Use this for domain-specific keys whose names are unsafe only as complete
+	// fields; ExtraSensitiveKeys intentionally retains substring matching.
+	ExactSensitiveKeys []string
 	ExtraPatterns      []*regexp.Regexp
 }
 
 type config struct {
-	marker        string
-	sensitiveKeys []string
-	patterns      []*regexp.Regexp
+	marker             string
+	sensitiveKeys      []string
+	exactSensitiveKeys map[string]struct{}
+	patterns           []*regexp.Regexp
 }
 
 type result struct {
@@ -255,6 +261,16 @@ func newConfig(opts ...Options) config {
 				cfg.sensitiveKeys = append(cfg.sensitiveKeys, key)
 			}
 		}
+		for _, key := range opt.ExactSensitiveKeys {
+			key = normalizeExactSensitiveKey(key)
+			if key == "" {
+				continue
+			}
+			if cfg.exactSensitiveKeys == nil {
+				cfg.exactSensitiveKeys = make(map[string]struct{})
+			}
+			cfg.exactSensitiveKeys[key] = struct{}{}
+		}
 		for _, pattern := range opt.ExtraPatterns {
 			if pattern != nil {
 				cfg.patterns = append(cfg.patterns, pattern)
@@ -272,12 +288,22 @@ func sensitiveKeyWithConfig(key string, cfg config) bool {
 	if isSensitiveSourceAssignment(key) {
 		return false
 	}
+	if _, ok := cfg.exactSensitiveKeys[normalizeExactSensitiveKey(key)]; ok {
+		return true
+	}
 	for _, marker := range cfg.sensitiveKeys {
 		if strings.Contains(key, marker) {
 			return true
 		}
 	}
 	return false
+}
+
+func normalizeExactSensitiveKey(key string) string {
+	fields := strings.FieldsFunc(strings.ToLower(strings.TrimSpace(key)), func(r rune) bool {
+		return r == '_' || r == '-' || r == '.' || r == ' ' || r == '\t' || r == '\r' || r == '\n'
+	})
+	return strings.Join(fields, "_")
 }
 
 func isSensitiveSourceAssignment(key string) bool {

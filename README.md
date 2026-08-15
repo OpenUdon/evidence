@@ -10,14 +10,14 @@ License: Apache-2.0.
 ## Packages
 
 - `artifact`: deterministic artifact records, safe relative path validation,
-  manifests, manifest digests, and product label options for preserving
-  domain-specific validation wording.
+  manifests, content descriptors, lifecycle assessments, canonical digests,
+  and product label options for preserving domain-specific validation wording.
 - `digest`: canonical digest records and SHA-256 helpers.
 - `diagnostic`: product-neutral diagnostic records, severity normalization, and
   deterministic diagnostic sorting.
 - `redact`: product-neutral redaction helpers for secret-like strings and
-  JSON/YAML-like documents, including quoted and unquoted assignments while
-  preserving authentication scheme names such as Bearer and Basic.
+  JSON/YAML-like documents, including quoted and unquoted assignments and
+  exact whole-key extensions while preserving authentication scheme names.
 - `approval`: neutral approval evidence records, approver normalization,
   requirement evaluation, validation diagnostics, expiry-aware validation, and
   deterministic approval record digests.
@@ -33,6 +33,10 @@ License: Apache-2.0.
 - Artifact path validation accepts product labels for root, path, and input
   names so downstream CLIs can keep stable error messages while sharing one
   implementation.
+- Content descriptors bind media type and size to exact SHA-256 bytes.
+  Lifecycle assessments record caller-supplied active, stale, revoked, or
+  superseded evidence at an explicit time; they do not establish issuer trust,
+  storage policy, registry identity, or authorization.
 
 ## Boundary
 
