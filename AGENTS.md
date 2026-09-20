@@ -21,29 +21,29 @@ model prompting, or live execution.
 ## Memory Bank First
 
 The tracked canonical Evidence harness snapshot lives in `../tofu/evidence`.
-In a normal `../evidence` checkout, `AGENTS.md`, `memory-bank/`, and
-`evolution/` may be symlinks to this tracked snapshot so agents can use local
+In a normal `../evidence` checkout, `AGENTS.md`, `tabilet/memory-bank/`, and
+`tabilet/evolution/` may be symlinks to this tracked snapshot so agents can use local
 paths while planning history is committed in the `../tofu` repository.
 
 Before substantial changes, read in this order:
 
-1. [memory-bank/product.md](memory-bank/product.md)
-2. [memory-bank/architecture.md](memory-bank/architecture.md)
-3. [memory-bank/tech-stack.md](memory-bank/tech-stack.md)
-4. [memory-bank/milestone.md](memory-bank/milestone.md)
-5. The relevant per-milestone status file in [memory-bank/](memory-bank/)
+1. [tabilet/memory-bank/product.md](tabilet/memory-bank/product.md)
+2. [tabilet/memory-bank/architecture.md](tabilet/memory-bank/architecture.md)
+3. [tabilet/memory-bank/tech-stack.md](tabilet/memory-bank/tech-stack.md)
+4. [tabilet/memory-bank/milestone.md](tabilet/memory-bank/milestone.md)
+5. The relevant per-milestone status file in [tabilet/memory-bank/](tabilet/memory-bank/)
 
 Use the memory bank as the active project source of truth. Do not recreate
 duplicate root-level product, architecture, roadmap, or aggregate status
 documents.
 
-This project exposes [GOAL.md](GOAL.md), one optional protocol for goal requests
+This project exposes [tabilet/GOAL.md](tabilet/GOAL.md), one optional protocol for goal requests
 that span multiple status files. Follow it only when a request names it.
 
-A `GOAL.md` run is a deliberate exception to the row-level commit rule below.
+A `tabilet/GOAL.md` run is a deliberate exception to the row-level commit rule below.
 For that run, `COMMIT_POLICY: none` — the protocol default — means no commits,
 while `COMMIT_POLICY: task` keeps the usual one-commit-per-row cadence.
-Precedence is the request, then `GOAL.md`, then this file; only commits are
+Precedence is the request, then `tabilet/GOAL.md`, then this file; only commits are
 delegated, and only during the run.
 
 ## Boundaries
@@ -128,11 +128,11 @@ applicable:
 
 ## Documentation Rules
 
-- Update [memory-bank/milestone.md](memory-bank/milestone.md) when milestone
+- Update [tabilet/memory-bank/milestone.md](tabilet/memory-bank/milestone.md) when milestone
   scope, sequencing, acceptance criteria, current-state dashboard, boundaries,
   or the status-file index changes.
 - When a milestone has multiple implementation tasks, update the matching
-  `memory-bank/status-<LANE><NN>.md` file with task rows, state, notes, and scoped
+  `tabilet/memory-bank/status-<LANE><NN>.md` file with task rows, state, notes, and scoped
   commit tracking.
 - Keep one permanent, zero-padded status file for every milestone indexed by
   `milestone.md`. Never reuse an ID or create aggregate `status.md`.
@@ -144,15 +144,15 @@ applicable:
 - Treat each row as a commit unit. Parallel artifact-integrity and trust-record
   work requires explicit non-overlapping ownership, resolved prerequisites,
   and downstream impacts in `milestone.md`.
-- Update [memory-bank/product.md](memory-bank/product.md) when product scope,
+- Update [tabilet/memory-bank/product.md](tabilet/memory-bank/product.md) when product scope,
   users, workflows, concepts, or non-goals change.
-- Update [memory-bank/architecture.md](memory-bank/architecture.md) when system
+- Update [tabilet/memory-bank/architecture.md](tabilet/memory-bank/architecture.md) when system
   boundaries, package layout, data flow, execution model, or security
   boundaries change.
-- Update [memory-bank/tech-stack.md](memory-bank/tech-stack.md) when
+- Update [tabilet/memory-bank/tech-stack.md](tabilet/memory-bank/tech-stack.md) when
   dependencies, commands, runtime assumptions, artifact schemas, or tooling
   choices change.
-- Check [evolution/](evolution/) after a major review, milestone, or boundary
+- Check [tabilet/evolution/](tabilet/evolution/) after a major review, milestone, or boundary
   change. Add the next prompt/result version only when product direction,
   architecture boundary, milestone target, or public/private contract direction
   materially changes.

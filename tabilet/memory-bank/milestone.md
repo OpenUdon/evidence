@@ -17,8 +17,8 @@ T01, T02, T03, ...
 Task/status files use the lane ID:
 
 ```text
-memory-bank/status-M01.md
-memory-bank/status-M02.md
+tabilet/memory-bank/status-M01.md
+tabilet/memory-bank/status-M02.md
 ```
 
 Do not reuse IDs after a status file exists.
@@ -109,9 +109,9 @@ harness docs, explicit ownership boundaries, and baseline commands.
 
 Acceptance:
 
-- `AGENTS.md`, `memory-bank/product.md`, `memory-bank/architecture.md`,
-  `memory-bank/tech-stack.md`, `memory-bank/milestone.md`, and
-  `memory-bank/status-M01.md` exist through the tracked snapshot.
+- `AGENTS.md`, `tabilet/memory-bank/product.md`, `tabilet/memory-bank/architecture.md`,
+  `tabilet/memory-bank/tech-stack.md`, `tabilet/memory-bank/milestone.md`, and
+  `tabilet/memory-bank/status-M01.md` exist through the tracked snapshot.
 - The root checkout has the same symlink-facing harness pattern used by Ramen.
 - `go.mod` exists with module path `github.com/OpenUdon/evidence`.
 - Documentation states that Evidence owns deterministic shared evidence
